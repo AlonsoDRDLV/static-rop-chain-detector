@@ -19,14 +19,14 @@ class FileManager:
         self.current_file = None
         self.current_file_offset = 0    # next byte to read
 
-        print(f"folder_name: {self.folder_name}")
-        print(f"stack_info: {self.stack_info}")
-        print(f"bitness: {self.bitness}")
-        print(f"dmp_info: {self.dmp_info}")
-        print(f"dword_size: {self.dword_size}")
-        print(f"current_file_index: {self.current_file_index}")
-        print(f"current_file: {self.current_file}")
-        print(f"current_file_offset: {self.current_file_offset}")
+        #print(f"folder_name: {self.folder_name}")
+        #print(f"stack_info: {self.stack_info}")
+        #print(f"bitness: {self.bitness}")
+        #print(f"dmp_info: {self.dmp_info}")
+        #print(f"dword_size: {self.dword_size}")
+        #print(f"current_file_index: {self.current_file_index}")
+        #print(f"current_file: {self.current_file}")
+        #print(f"current_file_offset: {self.current_file_offset}")
 
     def parse_stacks_result_file(self) -> List[dict] | None:
         """

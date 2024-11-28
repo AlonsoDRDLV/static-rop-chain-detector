@@ -57,8 +57,8 @@ if __name__ == "__main__":
                     sequences.append(current_sequence)
                     current_sequence = []
 
-            print(f"Next DWORD to be read: {next_direction_val.decode('ascii', errors='ignore')} with int value: {next_dir_int_value}")
-
+            #print(f"Next DWORD to be read: {next_direction_val.decode('ascii', errors='ignore')} with int value: {next_dir_int_value}")
+    """
     print("Matches:")
     for match in matches:
         print(
@@ -68,6 +68,7 @@ if __name__ == "__main__":
             match[1].decode('ascii', errors='ignore')  # ASCII representation
 
         )
+    """
     print("\nSequences (x-gap-separated, longer than y):")
     for sequence_index, matches in enumerate(sequences):
         print\
@@ -81,7 +82,7 @@ if __name__ == "__main__":
         print()  # Add a blank line between sequences for readability
 
     # Open a file for writing
-    with open("sequences.txt", "w") as file:
+    with open("sequences_" + str(x) + "_" + str(y) + ".txt", "w") as file:
         file.write("Matches:\n")
         for sequence_index, matches in enumerate(sequences):
             file.write(f"Sequence {sequence_index + 1} (length: {len(matches)}):\n")
