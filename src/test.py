@@ -6,7 +6,7 @@ script_path = r"C:\Users\AlonsoDRDLV\Documents\GitHub\static-rop-chains-detector
 input_path = r"..\dmp_examples\2264_26-11-2024_12-46-30_UTC"
 
 # Argument ranges
-second_arg_values = [3, 2]
+second_arg_values = [5, 4, 3, 2]
 third_arg_values = range(1, 9)
 
 # Iterate through combinations and execute the command
