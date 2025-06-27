@@ -1,7 +1,7 @@
 from typing import List, Tuple, Union
 
 
-class FileManager:
+class ProcessDumpManager:
     def __init__(self, folder_name: str):
         """
         Initializes a FileManager object with the specified folder name. It parses the results.txt file
@@ -14,7 +14,7 @@ class FileManager:
         self.folder_name = folder_name  # folder where the dmp files are
         self.stack_info = self.parse_stacks_result_file()  # list of dictionaries with info related to the stack dmp files
         self.bitness, self.dmp_info = self.parse_results_file() # bitness of the process and list of dictionaries with info related to the dmp files
-        self.dword_size = self.bitness // 8  # size of a DWORD in bytes
+        self.word_size = self.bitness // 8  # size of a word in bytes
         self.current_file_index = -1     # index for stack_info of the currently open file
         self.current_file = None
         self.current_file_offset = 0    # next byte to read
@@ -23,7 +23,7 @@ class FileManager:
         #print(f"stack_info: {self.stack_info}")
         #print(f"bitness: {self.bitness}")
         #print(f"dmp_info: {self.dmp_info}")
-        #print(f"dword_size: {self.dword_size}")
+        #print(f"word_size: {self.word_size}")
         #print(f"current_file_index: {self.current_file_index}")
         #print(f"current_file: {self.current_file}")
         #print(f"current_file_offset: {self.current_file_offset}")
@@ -53,7 +53,7 @@ class FileManager:
                     if line.startswith('Filename:'):
                         filename_parts = line.split(', SHA-256:')[0].split(' ')[1].split('_')[0:-1] + [line.split('_')[-1].split('.')[0]]
                         file_name = filename_parts[0] + '_' + filename_parts[1] + '_' + filename_parts[2] + '.dmp'
-                        tid = int(filename_parts[0])
+                        tid = int(filename_parts[0], 16)
                         memory_address = filename_parts[1]
                         stack_size = int(filename_parts[2], 16)
 
@@ -120,13 +120,13 @@ class FileManager:
 
         return bitness, dmp_list
 
-    def get_next_direction(self):
+    def get_next_direction(self) -> Union[Tuple[int, bytes], None]:
         """
-        Returns the next DWORD to be read from the current dmp file.
+        Returns the next WORD pointed by the next address to be read from the current dmp file.
 
         Returns:
-            int: The next DWORD to be read. Returns None if there are no more files to be read or if an
-            error occurs while reading the file.
+            Tuple[int, bytes] | None: A tuple containing the address and the WORD at that address in the current dmp file.
+            Returns None if the end of the file is reached.
         """
 
         try:
@@ -140,25 +140,25 @@ class FileManager:
 
         try:
             self.current_file.seek(self.current_file_offset)
-            dword = self.current_file.read(4)
+            word = self.current_file.read(self.word_size)
             m_a = self.stack_info[self.current_file_index]["memory_address"]
             base_address = int(self.stack_info[self.current_file_index]["memory_address"], 16)
             address = base_address + self.current_file_offset
-            self.current_file_offset += self.dword_size
+            self.current_file_offset += self.word_size
 
-            if len(dword) < self.dword_size:  # End of file reached
+            if len(word) < self.word_size:  # End of file reached
                 self.current_file.close()
                 self.current_file = None
                 self.current_file_offset = 0
                 return None
 
-            return address, dword
+            return address, word
 
         except IOError:
             print(f"Error: Could not read file {self.stack_info[self.current_file_index]['file_name']}")
             return None
 
-    def read_next_dmp_file(self) -> bool:
+    def read_next_stack_dmp_file(self) -> bool:
         """
         Opens the next dmp file in the stack_info list for reading.
 
@@ -176,9 +176,41 @@ class FileManager:
 
         try:
             self.current_file = open(file_name, 'rb')
-            print("File: ", self.current_file_index)
+            # print("File: ", self.current_file_index)
             return True
 
         except IOError:
             print(f"Error: Could not open or read file {file_name}")
             return False
+
+    def is_in_img_region(self, address: int) -> bool:
+        for region in self.dmp_info:
+            low, high = region["Memory region"]
+            if low <= address <= high:
+                return True
+        return False
+
+    def access_img_dump_file(self, address: int) -> bytes | None:
+        """
+        Opens the IMG dump file corresponding to the memory region containing the specified address and
+        returns the WORD at that address.
+
+        Param:
+            int address: The address to be accessed in the IMG dump file.
+        Returns:
+            The WORD at the specified address in the IMG dump file.
+        """
+
+        for region in self.dmp_info:
+            low, high = region["Memory region"]
+            if low <= address <= high:
+                file_name = self.folder_name + "\\" + region["Filename"]
+                with open(file_name, 'rb') as file:
+                    #print(f"Accessing address {hex(address)} in file {file_name}")
+                    file.seek(address - low)
+                    word = file.read(self.word_size)
+                    #print(f"WORD at address {hex(address)}: {hex(int.from_bytes(word, byteorder='big'))}")
+                    # big endian so the opcode is in the most significant bytes, like in a debugger's view
+                    return word
+
+        return None
